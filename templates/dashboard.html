@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>User post page</title>
+  
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
+  
+  <style>
+    body {
+      background-color: #f8f9fa;
+      padding-top: 50px;
+    }
+    .container {
+      max-width: 900px;
+    }
+    .card {
+      border-radius: 10px;
+    }
+    .card-body {
+      background-color: #ffffff;
+      border-radius: 10px;
+    }
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+    .btn-custom {
+      background-color: #007bff;
+      color: white;
+      border-radius: 5px;
+    }
+    .btn-custom:hover {
+      background-color: #0056b3;
+      color: white;
+    }
+  </style>
+
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.4/dist/jquery.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    $(document).ready(function(){
+        $('#view-post-tab').click(function(){
+            $('#view-post').load('/view_posts');  
+        });
+    });
+  </script>
+
+</head>
+<body>
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-sm-8">
+            <div class="mb-4">
+                <h2 class="text-center mb-4">User Posts Dashboard</h2>
+                <div class="d-flex justify-content-between">
+                    <p><strong>Name:</strong> {{ user.name }}</p>
+                    <p><strong>Email:</strong> {{ user.email }}</p>
+                </div>
+                <a href="/logout" class="btn btn-primary btn-custom">Logout</a>
+            </div>
+            <ul class="nav nav-tabs" id="dashboardTabs" role="tablist">
+                <li class="nav-item">
+                    <a class="nav-link active" id="create-post-tab" data-toggle="tab" href="#create-post" role="tab" aria-controls="create-post" aria-selected="true">Create Post</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="view-post-tab" data-toggle="tab" href="#view-post" role="tab" aria-controls="view-post" aria-selected="false">View Posts</a>
+                </li>
+            </ul>
+            <div class="tab-content" id="dashboardTabsContent">
+                <div class="tab-pane fade show active" id="create-post" role="tabpanel" aria-labelledby="create-post-tab">
+                    <div class="mb-4"><br>
+                        <h3>Create New Post</h3>
+                        <form action="/create_post" method="POST">
+                            <div class="form-group">
+                                <label for="postTitle">Title:</label>
+                                <input type="text" class="form-control" id="postTitle" name="title" placeholder="Enter title" required>
+                                <input type="hidden" class="form-control" id="userId" name="user_email" value="{{ user.email }}">
+                            </div>
+                            <div class="form-group">
+                                <label for="postContent">Description:</label>
+                                <textarea class="form-control" id="postContent" name="content" placeholder="What's on your mind?" rows="4" required></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-custom">Create Post</button>
+                        </form>
+                    </div>
+                </div>
+                <div class="tab-pane fade" id="view-post" role="tabpanel" aria-labelledby="view-post-tab">
+                    <div id="view-post">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,221 @@
+<div class="mb-4"><br>
+    <h3>View Posts</h3>
+
+    {% for post in posts %}
+    <div class="card mb-4 shadow-sm rounded">
+        <div class="card-body d-flex">
+            <div class="post-section" style="width: 50%; padding-right: 20px;">
+                <h5>Post:</h5>
+                <strong class="card-title" id="title-{{ post.id }}">{{ post.title }}</strong>
+                <textarea id="edit-title-{{ post.id }}" class="form-control" style="display:none;" rows="1">{{ post.title }}</textarea>
+  
+                <p id="content-{{ post.id }}" class="card-text">{{ post.content }}</p>
+                <textarea id="edit-content-{{ post.id }}" class="form-control" style="display:none;" rows="3">{{ post.content }}</textarea>
+                <small class="text-muted">By {{ post.user_email }}</small>
+  
+                <div class="form-group">
+                    <button type="button" class="btn btn-warning btn-sm edit-btn" data-id="{{ post.id }}">Edit</button>
+                    <button type="button" class="btn btn-danger btn-sm delete-post-btn" data-post-id="{{ post.id }}">Delete</button>
+                </div>
+            </div>
+            <div class="comments-section" style="width: 50%; padding-left: 20px;">
+                <h5>Comments:</h5>
+                <div id="comments-{{ post.id }}">
+                    {% for comment in post.comments %}
+                    <div class="comment mb-2" id="comment-{{ comment.id }}">
+                        <strong>{{ comment.user_email }}:</strong>
+                        <p class="comment-content" id="content-{{ comment.id }}">{{ comment.comment }}</p>
+                        
+                        <button type="button" class="btn btn-warning btn-sm edit-comment-btn" data-comment-id="{{ comment.id }}">Edit</button>
+                        <form action="/delete_comment/{{ comment.id }}" method="POST" style="display:inline;">
+                            <button type="button" class="btn btn-danger btn-sm delete-comment-btn" data-comment-id="{{ comment.id }}" data-post-id="{{ post.id }}">Delete</button>
+                        </form>
+            
+                        <textarea id="edit-comment-{{ comment.id }}" class="form-control" style="display:none;" rows="2">{{ comment.comment }}</textarea>
+                        <button type="button" class="btn btn-success btn-sm save-comment-btn" data-comment-id="{{ comment.id }}" style="display:none;" id="save-comment-{{ comment.id }}">Save</button>
+                    </div>
+                    {% else %}
+                    <p>No comments yet.</p>
+                    {% endfor %}
+                </div>
+                
+                <form action="/add_comment" method="POST" class="comment-form">
+                    <textarea class="form-control" id="comment" name="comment" rows="2" placeholder="Write a comment..."></textarea>
+                    <input type="hidden" name="post_id" value="{{ post.id }}">
+                    <input type="hidden" name="user_email" value="{{ post.user_email}}">
+                    <button type="submit" class="btn btn-primary btn-sm mt-2">Add Comment</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <p>No posts available.</p>
+    {% endfor %}
+</div>
+  
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  
+  <script>
+   $(document).ready(function() {
+    $('.delete-post-btn').click(function(event) {
+        event.preventDefault();
+
+        var postId = $(this).data('post-id');
+        
+        $.ajax({
+            url: '/delete_post/' + postId,
+            method: 'POST',
+            success: function(response) {
+               
+                if (response.status === 'success') {
+                    $('#post-' + postId).remove();
+                    alert('Post deleted successfully!'); 
+                    window.location.href = window.location.href;
+                } else {
+                    alert('Error deleting post');
+                }
+            },
+            error: function() {
+                alert('There was an error deleting the post.');
+            }
+        });
+    });
+    $('.delete-comment-btn').click(function(event) {
+        event.preventDefault();
+        
+        var commentId = $(this).data('comment-id');
+        var postId = $(this).data('post-id');
+        
+        $.ajax({
+            url: '/delete_comment/' + commentId,
+            method: 'POST',
+            success: function(response) {
+                if (response.status === 'success') {
+                    $('#comment-' + commentId).remove();
+                    alert('Comment deleted successfully!');
+                } else {
+                    alert('Error deleting comment');
+                }
+            },
+            error: function() {
+                alert('There was an error deleting the comment.');
+            }
+        });
+    });
+    $('.comment-form').submit(function(event) {
+        event.preventDefault();
+
+        var postId = $(this).find("input[name='post_id']").val();
+        var commentText = $(this).find("textarea[name='comment']").val();
+        var userEmail = $(this).find("input[name='user_email']").val();
+
+        $.ajax({
+            url: '/add_comment',
+            method: 'POST',
+            data: {
+                comment: commentText,
+                post_id: postId,
+                user_email: userEmail
+            },
+            success: function(response) {
+               
+                console.log(response); 
+
+                if (response && response.comment && response.user_email) {
+            
+                    $('#comments-' + postId).append(`
+                        <div class="comment mb-2">
+                            <strong>${response.user_email}:</strong>
+                            <p class="comment-content">${response.comment}</p>
+                        </div>
+                    `);
+
+                    $('textarea[name="comment"]').val('');
+                } else {
+                    alert('Failed to add the comment. Please try again.');
+                }
+            },
+            error: function() {
+                alert('There was an error submitting the comment.');
+            }
+        });
+    });
+
+    $('.edit-comment-btn').click(function() {
+        var commentId = $(this).data('comment-id');
+        
+        $('#content-' + commentId).hide();
+        $('#edit-comment-' + commentId).show();
+        
+        $(this).hide();
+        
+        $('#save-comment-' + commentId).show();
+    });
+
+    $('.save-comment-btn').click(function() {
+        var commentId = $(this).data('comment-id');
+        var newCommentContent = $('#edit-comment-' + commentId).val();
+
+        $.ajax({
+            url: '/edit_comment/' + commentId,
+            method: 'POST',
+            data: {
+                comment: newCommentContent
+            },
+            success: function(response) {
+                $('#content-' + commentId).text(newCommentContent);
+                $('#edit-comment-' + commentId).hide();
+                $('#content-' + commentId).show();
+                $('#save-comment-' + commentId).hide();
+                $('.edit-comment-btn[data-comment-id="' + commentId + '"]').show();
+            },
+            error: function() {
+                alert('There was an error updating the comment.');
+            }
+        });
+    });
+
+    $('.edit-btn').click(function() {
+        var postId = $(this).data('id');
+        
+        $('#title-' + postId).toggle();
+        $('#content-' + postId).toggle();
+        $('#edit-title-' + postId).toggle();
+        $('#edit-content-' + postId).toggle();
+  
+        var button = $(this);
+        if (button.text() === 'Edit') {
+            button.text('Save')
+                .removeClass('btn-warning')
+                .addClass('btn-success');
+        } else {
+            var newTitle = $('#edit-title-' + postId).val();
+            var newContent = $('#edit-content-' + postId).val();
+  
+            $.ajax({
+                url: '/edit_post/' + postId,
+                method: 'POST',
+                data: {
+                    title: newTitle,
+                    content: newContent
+                },
+                success: function(response) {
+                
+                    $('#title-' + postId).text(newTitle);
+                    $('#content-' + postId).text(newContent);
+                    $('#edit-title-' + postId).hide();
+                    $('#edit-content-' + postId).hide();
+                    $('#title-' + postId).show();
+                    $('#content-' + postId).show();
+  
+                    button.text('Edit')
+                        .removeClass('btn-success')
+                        .addClass('btn-warning');
+                }
+            });
+        }
+    });
+});
+
+  </script>
+  
